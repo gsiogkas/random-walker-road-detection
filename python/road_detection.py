@@ -183,7 +183,7 @@ def test():
 
     im0 = plt.imread('../test/diplo000000-L.png')
     im1, gt1 = read_diplodoc('../test/', 'diplo', 1)
-    result1, _ = main(im0, im1)
+    result1 = main(im0, im1)
     results, mask = calculate_metrics(result1, gt1)
     announce_results(results)
     return results, mask, im1
