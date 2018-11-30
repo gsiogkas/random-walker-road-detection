@@ -24,7 +24,9 @@ https://www.linkedin.com/pulse/dr-reproducible-research-how-i-learned-stop-worry
 - Finally, jupyter for using ipython and jupyter notebooks. Also, (optional) jupyterlab.
 
 ## Setting up your environment using conda
-Concluding, you can easily recreate my Linux python environment by installing miniconda and then running:
+Concluding, you can easily recreate my Linux python environment by installing miniconda and then:
+
+### Option 1: create the environment manually:
 
 ```
 conda create -n rdpaper python=3.6 numpy scikit-image scikit-learn matplotlib scipy jupyter tqdm pyamg numexpr
@@ -34,6 +36,12 @@ pip install scikit-umfpack
 pip install drawnow
 
 ```
+
+### Option 2: Create the environment using my image:
+```bash
+conda env create -f linux_environment.yml
+```
+
 
 ## Basic usage
 You can run a smoke test on the 2 images included here by running test() from inside the python folder:
