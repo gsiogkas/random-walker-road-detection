@@ -6,6 +6,9 @@ doi: 10.1109/TITS.2012.2223686
 
 URL: http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6338335&isnumber=6521414
 
+A commentary on the making of and rationale behind this repo can be found in a series of my LinkedIn articles:
+https://www.linkedin.com/pulse/dr-reproducible-research-how-i-learned-stop-worrying-love-siogkas/
+
 
 ## Dependencies
 - The first thing we need, is a module that allows for image I/O and as many basic manipulations as possible. We could go for OpenCV, but it would be an overkill and we could be even more Pythonic in this exercise. Also, we would like to be closer to Matlab style, to be able to compare the methods easier. For this reason, I chose scikit-image.
