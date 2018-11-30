@@ -102,11 +102,12 @@ def rgb2c1(RGB):
     Returns:
         numpy.ndarray(double) -- C1 channel
     """
-    assert
     return np.arctan2(RGB[:, :, 0], np.maximum(RGB[:, :, 1], RGB[:, :, 2]))
 
 
-def main(im1, im2, alpha=3, niter=1, beta=90):
+def main(im1, im2,
+         alpha=3, niter=1,
+         beta=90, rw_method='bf', downsample_sz=(120, 160)):
     """Function that takes two consecutive frames from a driving sequence and
        performs road detection based on the paper:
 
@@ -117,7 +118,7 @@ def main(im1, im2, alpha=3, niter=1, beta=90):
 
        doi: 10.1109/TITS.2012.2223686
 
-       URL: http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6338335&isnumber=6521414 
+    URL: http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6338335&isnumber=6521414 
     
     Arguments:
         im1 {np.array} -- First frame
@@ -127,6 +128,9 @@ def main(im1, im2, alpha=3, niter=1, beta=90):
         alpha {int} -- alpha value for Horn-Schunck calculation (default: {3})
         niter {int} -- iterations for Horn-Schunck calculation (default: {1})
         beta {int} -- beta value for Random Walker calculation (default: {90})
+        rw_method {str} -- method for Random Walker solver (default: {'bf'})
+        downsample_sz {tuple (int, int)} -- downsampling size for RW input  
+                                            (default: {(120, 160))})
     
     Returns:
         numpy.ndarray(uint8) -- Road detection result
@@ -139,7 +143,7 @@ def main(im1, im2, alpha=3, niter=1, beta=90):
     im2_c1 = rgb2c1(im2)
 
     # Downsampling image for segmentation
-    im2 = imresize(im2, (120, 160))
+    im2 = imresize(im2, downsample_sz)
 
     # Calculating the HSC1 flow using Horn Schunck algorithm
     [u, v] = pyoptflow.HornSchunck(im1_c1, im2_c1, alpha, niter)
@@ -156,11 +160,11 @@ def main(im1, im2, alpha=3, niter=1, beta=90):
                            seeds,
                            multichannel=True, 
                            beta=beta,
-                           mode='bf')
+                           mode=rw_method)
     # Upsampling the result to the original size:
     result = imresize(result, np.shape(im2_c1), method='nearest')  
 
-    return result == 1, imresize(seeds, (120, 160), anti_aliasing=False)
+    return result == 1
 
 
 def test():
@@ -179,12 +183,12 @@ def test():
     result1, _ = main(im0, im1)
     results, mask = calculate_metrics(result1, gt1)
     announce_results(results)
-    return results, mask
+    return results, mask, im1
 
 
 if __name__ == '__main__':
     # Reading frames from disk
-    results, mask = test()
+    results, mask, im2 = test()
     
 
     
