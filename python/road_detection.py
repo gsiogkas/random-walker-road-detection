@@ -28,7 +28,9 @@ from matlab_ports import imresize
 import numpy as np
 from skimage.draw import polygon_perimeter
 from validation import *
-from data_helpers import read_diplodoc
+from data_helpers import read_diplodoc, download_decompress_diplodoc
+from pathlib import Path
+from tqdm import tqdm, trange
 
 
 def get_road_seeds(mask_shape, hsc1, thresh, road_trapezoid):
@@ -121,20 +123,20 @@ def main(im1, im2,
     URL: http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6338335&isnumber=6521414 
     
     Arguments:
-        im1 {np.array} -- First frame
-        im2 {np.array} -- Second frame
+        im1 {np.array} -- first frame
+        im2 {np.array} -- second frame
     
     Keyword Arguments:
         alpha {int} -- alpha value for Horn-Schunck calculation (default: {3})
         niter {int} -- iterations for Horn-Schunck calculation (default: {1})
-        beta {int} -- beta value for Random Walker calculation (default: {90})
-        rw_method {str} -- method for Random Walker solver (default: {'bf'})
-        downsample_sz {tuple (int, int)} -- downsampling size for RW input  
-                                            (default: {(120, 160))})
+        beta {int} -- beta value for random walker calculation (default: {90})
+        rw_method {str} -- method for random walker solver (default: {'bf'})
+        downsample_sz {tuple (int, int)} -- downsampling size for random walker 
+                                            input image(default: {(120, 160))})
     
     Returns:
-        numpy.ndarray(uint8) -- Road detection result
-        numpy.ndarray(uint8) -- Random Walker seeds
+        numpy.ndarray(uint8) -- road detection result
+        numpy.ndarray(uint8) -- random walker seeds
         
     """
 
@@ -172,10 +174,11 @@ def test():
        images form the DIPLODOC sequence (see paper).
     
     Returns:
-        dict -- Dictionary with performance metrics
-        numpy.ndarray(uint8) -- Colour-coded result (green: TP,
+        dict -- dictionary with performance metrics
+        numpy.ndarray(uint8) -- colour-coded result (green: TP,
                                                      red: FP, 
                                                      yellow: FN)
+        numpy.ndarray -- original image used 
     """
 
     im0 = plt.imread('../test/diplo000000-L.png')
@@ -186,10 +189,54 @@ def test():
     return results, mask, im1
 
 
+def test_on_diplodoc(alpha=3, niter=1,
+                     beta=90, rw_method='bf',
+                     downsample_sz=(120, 160)):
+    """Function to test road detection on DIPLODOC sequence
+    
+    Keyword Arguments:
+        alpha {int} -- See main() (default: {3})
+        niter {int} -- See main() (default: {1})
+        beta {int} -- See main() (default: {90})
+        rw_method {str} -- See main() (default: {'bf'})
+        downsample_sz {tuple} -- See main() (default: {(120, 160)})
+    
+    Returns:
+        list -- a list of dictionaries with per frame metrics
+    """
+
+    # Frame indices for start and end of each sub-sequence in DIPLODOC
+    seq_frames = [(0, 450), (451, 601), (602, 702), (703, 763), (764, 864)]
+    metrics = []
+    for seq in seq_frames:
+        # Check if data exists, if not, download first
+        diplodoc_data_path = Path(Path.cwd()).parents[0] / 'data' / 'gtseq'
+        if not diplodoc_data_path.is_dir():
+            download_decompress_diplodoc()
+        start_frame = seq[0]
+        end_frame = seq[1]
+        step = 1
+        t = trange(start_frame, end_frame, step,
+                   total=end_frame - start_frame,
+                   unit="frames",
+                   desc="F1=0"
+                  )
+        for i in t:
+            im0, _ = read_diplodoc(diplodoc_data_path.as_posix() + '/',
+                                   frame_idx = i)
+            im1, gt1 = read_diplodoc(diplodoc_data_path.as_posix() + '/',
+                                     frame_idx = i + 1)
+            det1 = main(im0, im1,
+                        alpha=alpha, niter=niter,
+                        beta=beta, rw_method=rw_method,
+                        downsample_sz=downsample_sz)
+            m, _ = calculate_metrics(det1, gt1)
+            t.set_description("F1=" + str(m['F1'])[:4])
+            t.refresh()
+            metrics.append(m)
+    return metrics
+
+
 if __name__ == '__main__':
     # Reading frames from disk
-    results, mask, im2 = test()
-    
-
-    
-    
+    results, mask, im1 = test()
