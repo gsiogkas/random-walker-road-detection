@@ -23,29 +23,28 @@ URL: http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6338335&isnumber=65
 ## Setting up your environment using conda
 Concluding, you can easily recreate my Linux python environment by installing miniconda and then running:
 
-'''
+```
 conda create -n rdpaper python=3.6 numpy scikit-image scikit-learn matplotlib scipy jupyter tqdm pyamg numexpr
 source activate rdpaper
 pip install pyoptflow
 pip install scikit-umfpack
 pip install drawnow
 
-'''
+```
 
 ## Basic usage
 You can run a smoke test on the 2 images included here by running test() from inside the python folder:
-
-'''python
+```python
 import road_detection
 road_detection.test()
-'''
+```
 
 ## Running test on DIPLODOC sequence
 You can run the algorithm on all the frames of the DIPLODOC sequence by running:
 
-'''python
+```python
 import road_detection
 results = road_detection.test_on_diplodoc_sequence()
-'''
+```
 
 This will give you a list of dictionaries with the performance metrics per frame.
