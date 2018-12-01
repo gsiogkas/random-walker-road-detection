@@ -11,22 +11,26 @@ https://www.linkedin.com/pulse/dr-reproducible-research-how-i-learned-stop-worry
 
 
 ## Dependencies
-- The first thing we need, is a module that allows for image I/O and as many basic manipulations as possible. We could go for OpenCV, but it would be an overkill and we could be even more Pythonic in this exercise. Also, we would like to be closer to Matlab style, to be able to compare the methods easier. For this reason, I chose scikit-image.
-- For general array manipulations, indexing and code vectorization to be possible, of course numpy.
-- For visualization, matplotlib and for easy streaming visualization at runtime (optional), drawnow.
-- For file reading, directory content lists etc, os from native Python.
-- For optical flow, there is a handy module named pyoptflow.
-- For Otsu's thresholding method, scikit-image provides an implementation in filters.
-- For basic processing time monitoring and logging (optional), time and logging from native Python will be used (I love it when things are so obvious).
-- For nice process bars (optional), tqdm.
-- Bonus track: the most difficult and tricky part is random walker. This is included in scikit-image. For performance, we should also install pyamg, numexpr and scikit-umfpack.
-- A nice-to-have couple of modules that may come in handy, are also scikit-learn and scipy.
-- Finally, jupyter for using ipython and jupyter notebooks. Also, (optional) jupyterlab.
+- *Python 3+* (tested on Python 3.6).
+- *Miniconda / Anaconda*
+- The first thing we need, is a module that allows for image I/O and as many basic manipulations as possible. We could go for OpenCV, but it would be an overkill and we could be even more Pythonic in this exercise. Also, we would like to be closer to Matlab style, to be able to compare the methods easier. For this reason, I chose *scikit-image*.
+- For general array manipulations, indexing and code vectorization to be possible, of course *numpy*.
+- For visualization, matplotlib and for easy streaming visualization at runtime (optional), *drawnow*.
+- For file reading, directory content lists etc, *os* from native Python.
+- For optical flow, there is a handy module named *pyoptflow*.
+- For Otsu's thresholding method, *scikit-image* provides an implementation in filters.
+- For basic processing time monitoring and logging (optional), *time* and *logging* from native Python will be used (I love it when things are so obvious).
+- For nice process bars (optional), *tqdm*.
+- Bonus track: the most difficult and tricky part is random walker. This is included in *scikit-image*. For performance, we should also install *pyamg*, *numexpr* and *scikit-umfpack*.
+- A nice-to-have couple of modules that may come in handy, are also *scikit-learn* and *scipy*.
+- Finally, *jupyter* for using ipython and jupyter notebooks. Also, (optional) *jupyterlab*.
 
 ## Setting up your environment using conda
-Concluding, you can easily recreate my Linux python environment by installing miniconda and then:
 
-### Option 1: create the environment manually:
+### Linux
+Concluding, you can easily recreate my Linux python environment by installing miniconda from https://conda.io/miniconda.html and then:
+
+#### Option 1: create the environment manually:
 
 ```
 conda create -n rdpaper python=3.6 numpy scikit-image scikit-learn matplotlib scipy jupyter tqdm pyamg numexpr
@@ -37,10 +41,12 @@ pip install drawnow
 
 ```
 
-### Option 2: Create the environment using my image:
+#### Option 2: Create the environment using my image:
 ```bash
 conda env create -f linux_environment.yml
 ```
+### Windows
+In theory, the same steps should be followed to setup your conda environment in Windows. I will update this section with possible differences once I find to test. If someone can contribute to this, please do.
 
 
 ## Basic usage
