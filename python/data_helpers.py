@@ -29,7 +29,7 @@ def my_hook(t):
     return update_to
 
 
-def read_road_annotations(filename, shape, object_name):
+def read_road_annotations(filename, shape):
     """Function to read road annotations in DIPLODC format 
     
     Arguments:
@@ -40,20 +40,52 @@ def read_road_annotations(filename, shape, object_name):
         int, int -- row and column coordinates for road polygon definition
     """
 
-    f = open(filename)
-    lines = f.readlines()
-    row = []
-    col = []
-    for line in lines:
-        line = line.replace('\n', '')
-        contents = line.split(' ')
-        if contents[0] == object_name:
-            for i, sample in enumerate(contents[2:]):
-                if i % 2:
-                    row.append(int (float(sample) * shape[0]) )
-                else:
-                    col.append(int (float(sample) * shape[1]))
+    with open(filename) as f:
+        lines = f.readlines()
+        row = []
+        col = []
+        for line in lines:
+            if 'road' in line:
+                line = line.replace('\n', '')
+                contents = line.split(' ')
+                for i, sample in enumerate(contents[2:]):
+                    if i % 2:
+                        row.append(int (float(sample) * shape[0]))
+                    else:
+                        col.append(int (float(sample) * shape[1]))
     return row, col
+
+
+def read_occl_annotations(filename, shape):
+    """Function to read occlusion annotations in DIPLODC format 
+    
+    Arguments:
+        filename {str} -- Filename (full path) of annotation file 
+        shape {tuple} -- Shape of image to translate the coordinates to
+    
+    Returns:
+        list of lists (int, int) -- row and column coordinates for occlusions 
+                                    polygons definition
+    """
+
+    with open(filename) as f:
+        lines = f.readlines()
+        rows = []
+        cols = []
+        for line in lines:
+            if 'occl' in line:
+                row = []
+                col = []
+                line = line.replace('\n', '')
+                contents = line.split(' ')
+                for i, sample in enumerate(contents[2:]):
+                    if i % 2:
+                        row.append(np.ceil (float(sample) * shape[0]))
+                    else:
+                        col.append(np.ceil (float(sample) * shape[1]))
+                rows.append(row)
+                cols.append(col)
+    return rows, cols
 
 
 def read_diplodoc(base_path, name='diplo', frame_idx=0):
@@ -72,16 +104,18 @@ def read_diplodoc(base_path, name='diplo', frame_idx=0):
     im_fnm = base_path +  name + str(frame_idx).zfill(6) + '-L.png'
     im_rgb = plt.imread(im_fnm)
     road_x, road_y = read_road_annotations(im_fnm.replace('png', 'txt'),
-                                           np.shape(im_rgb)[:2], 
-                                           'road')
-    occl_x, occl_y = read_road_annotations(im_fnm.replace('png', 'txt'),
-                                           np.shape(im_rgb)[:2], 
-                                           'occl')
+                                           np.shape(im_rgb)[:2])
+    occl_x, occl_y = read_occl_annotations(im_fnm.replace('png', 'txt'),
+                                           np.shape(im_rgb)[:2])
     road_mask = poly2mask(road_x, road_y, np.shape(im_rgb)[:2])
     if occl_x:
-        occl_mask = poly2mask(occl_x, occl_y, np.shape(im_rgb)[:2])
+        occl_mask = np.zeros_like(road_mask)
+        for oc_x, oc_y in zip(occl_x, occl_y):
+            occl_mask = np.bitwise_or(occl_mask,
+                                      poly2mask(oc_x, oc_y,
+                                                np.shape(im_rgb)[:2]))
         road_mask = np.bitwise_and(road_mask, np.bitwise_not(occl_mask))
-    
+        
     road_mask[-1, :] = True
     for i in np.where(road_mask[:,-2]==True)[0]:
         road_mask[i, -1] = True 
@@ -116,9 +150,3 @@ def download_decompress_diplodoc():
 
 if __name__ == '__main__':
     pass
-
-
-        
-
-
-
