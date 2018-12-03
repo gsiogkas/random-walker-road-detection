@@ -21,7 +21,7 @@
 # SOFTWARE.
 
 import matplotlib.pyplot as plt
-import pyoptflow
+import horn_schunck
 from skimage.segmentation import random_walker
 from skimage.filters import threshold_otsu
 from matlab_ports import imresize
@@ -31,7 +31,6 @@ from validation import *
 from data_helpers import read_diplodoc, download_decompress_diplodoc
 from pathlib import Path
 from tqdm import tqdm, trange
-from drawnow import drawnow
 from time import time
 
 
@@ -194,7 +193,7 @@ def main(im1, im2, previous_result=[], seed_selection='static',
     im2 = imresize(im2, downsample_sz)
 
     # Calculating the HSC1 flow using Horn Schunck algorithm
-    [u, v] = pyoptflow.HornSchunck(im1_c1, im2_c1, alpha, niter)
+    [u, v] = horn_schunck.HornSchunck(im1_c1, im2_c1, alpha, niter)
     hsc1 = imresize(np.sqrt(u ** 2 + v ** 2), np.shape(im2)[:2])
     # hsc1 = mat2gray(hsc1)
     # Getting the threshold of the HSC1 flow using Otsu's method
@@ -289,7 +288,7 @@ def test_on_diplodoc(seed_selection='static',
             previous_result = imresize(det1, downsample_sz, method='nearest')
             metrics.append(m)
     t1 = time()
-    mrt = t1 - t0 / len(metrics)
+    mrt = (t1 - t0) / len(metrics)
     print('Mean runtime: ', mrt, 'seconds (', 1 / mrt, 'fps)')
     return metrics
 
