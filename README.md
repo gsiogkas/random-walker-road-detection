@@ -82,7 +82,7 @@ load pkg image % For Octave only
 ## Running test on DIPLODOC sequence
 You can run the algorithm on all the frames of the DIPLODOC sequence by running:
 
-```python
+```octave
 load pkg image % For Octave only
 results = test_on_diplodoc();
 ```
