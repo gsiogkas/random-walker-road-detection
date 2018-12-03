@@ -10,6 +10,7 @@ A commentary on the making of and rationale behind this repo can be found in a s
 https://www.linkedin.com/pulse/dr-reproducible-research-how-i-learned-stop-worrying-love-siogkas/
 
 
+# Python implementation
 ## Dependencies
 - *Python 3+* (tested on Python 3.6).
 - *Miniconda / Anaconda*
@@ -65,3 +66,23 @@ results = road_detection.test_on_diplodoc_sequence()
 ```
 
 This will give you a list of dictionaries with the performance metrics per frame.
+
+# Octave / Matlab implementation
+## Dependencies
+- image package / toolbox.
+- graph_toolbox from http://eslab.bu.edu/software/graphanalysis/ (needed files are included for convenience in the /octave-matlab/graph_functions directory, under GPL v.3.0 licence).
+
+## Basic usage
+You can run a smoke test on the 2 images included here by running test() from inside the octave-matlab folder:
+```octave
+pkg load image % For Octave only
+[TP, FP, FN, R, P, Q, F1, IM] = test;
+```
+
+## Running test on DIPLODOC sequence
+You can run the algorithm on all the frames of the DIPLODOC sequence by running:
+
+```octave
+pkg load image % For Octave only
+results = test_on_diplodoc();
+```
