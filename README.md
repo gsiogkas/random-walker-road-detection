@@ -75,7 +75,7 @@ This will give you a list of dictionaries with the performance metrics per frame
 ## Basic usage
 You can run a smoke test on the 2 images included here by running test() from inside the octave-matlab folder:
 ```octave
-load pkg image % For Octave only
+pkg load image % For Octave only
 [TP, FP, FN, R, P, Q, F1, IM] = test;
 ```
 
@@ -83,6 +83,6 @@ load pkg image % For Octave only
 You can run the algorithm on all the frames of the DIPLODOC sequence by running:
 
 ```octave
-load pkg image % For Octave only
+pkg load image % For Octave only
 results = test_on_diplodoc();
 ```
