@@ -1,6 +1,6 @@
 # MIT License
 
-# Copyright (c) 2018 George Siogkas
+# Copcol_roadight (c) 2018 George Siogkas
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -9,13 +9,13 @@
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
 
-# The above copyright notice and this permission notice shall be included in all
+# The above copcol_roadight notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
 
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# AUTHORS OR COPcol_roadIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
@@ -31,9 +31,44 @@ from validation import *
 from data_helpers import read_diplodoc, download_decompress_diplodoc
 from pathlib import Path
 from tqdm import tqdm, trange
+from drawnow import drawnow
+from time import time
 
 
-def get_road_seeds(mask_shape, hsc1, thresh, road_trapezoid):
+def adaptive_perimeter_update(previous_road, hsc1_bin):
+    """Function to adaptively generate coordinates for road trapezoid
+    
+    Arguments:
+        previous_road {np.ndarray} -- previous frame's detected road
+        hsc1_bin {np.ndarray} -- hsc1 flow binarized
+    Returns:
+        list{int}, list{int} -- row, column coordinates of road trapezoid
+    """
+    row_road, col_road = np.where(np.bitwise_and(previous_road > 0,  hsc1_bin))
+    base = np.max(col_road) - np.min(col_road)
+    height = np.max(row_road) - np.min(row_road)
+    centroid = (np.mean(row_road), np.mean(col_road))
+    sz = np.shape(previous_road)
+    rows, cols = sz[0], sz[1]
+    top_row = max(np.min(row_road), int(rows * 0.5)) + int(height / 8)
+    # top_row = int((centroid[0] + np.min(row_road)) / 2)
+    dx = int(np.min(row_road) - centroid[0]) / 2
+    yy = np.where(previous_road[top_row, :] == 1)
+    min_yy, max_yy = np.min(yy), np.max(yy)
+    top_width = max_yy - min_yy
+    top_left = [top_row, min_yy + int(0.35 * top_width)]
+    top_right = [top_row, max_yy - int(0.35 * top_width)]
+    bottom_left = [rows, np.min(col_road) + 0.05 * base]
+    bottom_right = [rows, np.min(col_road) + 0.95 * base]
+
+    rr, cc = polygon_perimeter([rows, top_left[0], top_right[0], rows], 
+                               [bottom_left[1], top_left[1],
+                                top_right[1], bottom_right[1]],
+                               (rows, cols), clip=True)
+    return rr, cc
+
+
+def get_road_seeds(mask_shape, hsc1, thresh, road_trapezoid, previous_road=[]):
     """Function that produces the road seeds for the random walker algorithm
     
     Arguments:
@@ -41,6 +76,8 @@ def get_road_seeds(mask_shape, hsc1, thresh, road_trapezoid):
         hsc1 {[type]} -- [description]
         thresh {[type]} -- [description]
         road_trapezoid {[type]} -- [description]
+        previous_road {list or np.ndarray} -- previous frame's detected road or 
+                                              [] if static seed selection
     
     Returns:
         [type] -- [description]
@@ -48,20 +85,25 @@ def get_road_seeds(mask_shape, hsc1, thresh, road_trapezoid):
 
     rows, cols = mask_shape[0], mask_shape[1]
     road_perim = np.zeros(mask_shape, np.bool)
-    rr, cc = polygon_perimeter(road_trapezoid[0], road_trapezoid[1],
-                               (rows, cols), clip=True)
+    if len(previous_road):
+        rr, cc = adaptive_perimeter_update(previous_road, hsc1 < thresh)
+    else:
+        rr, cc = polygon_perimeter(road_trapezoid[0], road_trapezoid[1],
+                                   (rows, cols), clip=True)
     road_perim[rr, cc] = True
     road = np.bitwise_and(road_perim, hsc1 < thresh)
     return road
 
 
-def get_seeds(hsc1, thresh):
+def get_seeds(hsc1, thresh, previous_road):
     """Function that generates seeds for the random walker algorithm
     
     Arguments:
         hsc1 {numpy.ndarray(double)} -- HSC1 flow (see paper)
         thresh {float} -- Otsu's threshold for HSC1 flow
-    
+        previous_road {list or np.ndarray} -- previous frame's detected road or 
+                                              [] if static seed selection
+
     Returns:
         numpy.ndarray(uint8) -- seeds for random walker (0: undefined,
                                                          1: road,
@@ -70,17 +112,18 @@ def get_seeds(hsc1, thresh):
 
     sz = np.shape(hsc1)
     rows, cols = sz[0], sz[1]
-    top_left = [.7 * rows, .35*cols]
-    top_right = [.7 * rows, .65*cols]
-    bottom_left = [1 * rows, .1*cols]
-    bottom_right = [1 * rows, .9*cols]
+    top_left = [.7 * rows, .35 * cols]
+    top_right = [.7 * rows, .65 * cols]
+    bottom_left = [rows - 1, .1 * cols]
+    bottom_right = [rows - 1, .9 * cols]
     road_trapezoid = [[rows, top_left[0], top_right[0], rows], 
                       [bottom_left[1], top_left[1],
                        top_right[1], bottom_right[1]]
                      ]
     
     # Prepare road seeds (road trapezoid pixels with low HSC1 value)
-    road_seeds = get_road_seeds((rows, cols), hsc1, thresh, road_trapezoid)
+    road_seeds = get_road_seeds((rows, cols), hsc1, thresh,
+                                road_trapezoid, previous_road)
     
     # Prepare non-road seeds (top 20% fo rows and pixels with high HSC1 value)
     sky = np.zeros_like(road_seeds)
@@ -107,7 +150,7 @@ def rgb2c1(RGB):
     return np.arctan2(RGB[:, :, 0], np.maximum(RGB[:, :, 1], RGB[:, :, 2]))
 
 
-def main(im1, im2,
+def main(im1, im2, previous_result=[], seed_selection='static',
          alpha=3, niter=1,
          beta=90, rw_method='bf', downsample_sz=(120, 160)):
     """Function that takes two consecutive frames from a driving sequence and
@@ -140,6 +183,9 @@ def main(im1, im2,
         
     """
 
+    # Seed selection dict
+    ssd = {'static':[], 'adaptive':previous_result}
+    
     # Converting original frames to C1
     im1_c1 = rgb2c1(im1)
     im2_c1 = rgb2c1(im2)
@@ -150,15 +196,15 @@ def main(im1, im2,
     # Calculating the HSC1 flow using Horn Schunck algorithm
     [u, v] = pyoptflow.HornSchunck(im1_c1, im2_c1, alpha, niter)
     hsc1 = imresize(np.sqrt(u ** 2 + v ** 2), np.shape(im2)[:2])
-    
+    # hsc1 = mat2gray(hsc1)
     # Getting the threshold of the HSC1 flow using Otsu's method
     threshold = threshold_otsu(hsc1)
 
     # We use hsc1 to define the road and non-road seeds
-    seeds = get_seeds(hsc1, threshold)
+    seeds = get_seeds(hsc1, threshold, ssd[seed_selection])
     
     # Applying the random walker segmentation on the downsampled image
-    result = random_walker(im2, 
+    result = random_walker(im2,
                            seeds,
                            multichannel=True, 
                            beta=beta,
@@ -189,7 +235,8 @@ def test():
     return results, mask, im1
 
 
-def test_on_diplodoc(alpha=3, niter=1,
+def test_on_diplodoc(seed_selection='static',
+                     alpha=3, niter=1,
                      beta=90, rw_method='bf',
                      downsample_sz=(120, 160)):
     """Function to test road detection on DIPLODOC sequence
@@ -204,10 +251,12 @@ def test_on_diplodoc(alpha=3, niter=1,
     Returns:
         list -- a list of dictionaries with per frame metrics
     """
-
+    previous_result = []
     # Frame indices for start and end of each sub-sequence in DIPLODOC
     seq_frames = [(0, 450), (451, 601), (602, 702), (703, 763), (764, 864)]
     metrics = []
+    cnt = 0
+    t0 = time()
     for seq in seq_frames:
         # Check if data exists, if not, download first
         diplodoc_data_path = Path(Path.cwd()).parents[0] / 'data' / 'gtseq'
@@ -226,14 +275,22 @@ def test_on_diplodoc(alpha=3, niter=1,
                                    frame_idx = i)
             im1, gt1 = read_diplodoc(diplodoc_data_path.as_posix() + '/',
                                      frame_idx = i + 1)
-            det1 = main(im0, im1,
+            det1 = main(im0, im1, previous_result=previous_result,
+                        seed_selection=seed_selection,
                         alpha=alpha, niter=niter,
                         beta=beta, rw_method=rw_method,
                         downsample_sz=downsample_sz)
-            m, _ = calculate_metrics(det1, gt1)
+            
+            m, colored = calculate_metrics(det1, gt1)
             t.set_description("F1=" + str(m['F1'])[:4])
             t.refresh()
+            cnt += 1
+            # plt.imsave(str(cnt) + '.png', colored)
+            previous_result = imresize(det1, downsample_sz, method='nearest')
             metrics.append(m)
+    t1 = time()
+    mrt = t1 - t0 / len(metrics)
+    print('Mean runtime: ', mrt, 'seconds (', 1 / mrt, 'fps)')
     return metrics
 
 
