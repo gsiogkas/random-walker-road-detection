@@ -16,6 +16,7 @@ function [statistics] = test_on_diplodoc(alpha, niter, beta, downsample_sz)
     statistics = [];
     more off
     for i = 1:5
+        previous_road = [];
         start_frame = seq_frames(i, 1);
         end_frame = seq_frames(i, 2);
         for frame = start_frame:end_frame - 1
@@ -24,8 +25,12 @@ function [statistics] = test_on_diplodoc(alpha, niter, beta, downsample_sz)
             [im2, gt2] = read_diplodoc(frame + 1);
             [mask, probabilities, seeds] = road_detection(im1, im2, ...
                                                           alpha, niter,...
-                                                          beta, downsample_sz);
-            gt2 = imresize(gt2, size(mask), 'nearest');
+                                                          beta,...
+                                                          downsample_sz,...
+                                                          []);
+            previous_road = mask;
+            mask = imresize(mask, size(gt2), 'nearest');
+           
             [TP, FP, FN, R, P, Q, F1, I] = calculate_statistics(mask, gt2);
             statistics = cat(1, statistics, [TP, FP, FN, R, P, Q, F1]);
             dt = toc;
