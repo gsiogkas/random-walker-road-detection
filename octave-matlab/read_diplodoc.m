@@ -5,3 +5,4 @@ function [output,bw] = read_diplodoc(frame)
     output(:,:,:,1) = imread(filename);
     mask_filename = strrep(filename, 'png', 'txt');
     [xyroad, xyoccl, bw] = read_labeled_data(mask_filename);
+end
