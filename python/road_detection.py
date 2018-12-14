@@ -15,16 +15,17 @@
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPcol_roadIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
 import matplotlib.pyplot as plt
 import horn_schunck
-from skimage.segmentation import random_walker
+# from skimage.segmentation import random_walker
+from random_walker import random_walker
 from skimage.filters import threshold_otsu
-from matlab_ports import imresize
+from matlab_ports import *
 import numpy as np
 from skimage.draw import polygon_perimeter
 from validation import *
@@ -32,9 +33,26 @@ from data_helpers import read_diplodoc, download_decompress_diplodoc
 from pathlib import Path
 from tqdm import tqdm, trange
 from time import time
+from skimage.morphology import erosion, dilation
 
 
-def adaptive_perimeter_update(previous_road, hsc1_bin):
+def adaptive_perimeter_update_arbitrary(previous_road, hsc1_bin):
+    """Function to adaptively generate coordinates for road of arbitrary shape
+    
+    Arguments:
+        previous_road {np.ndarray} -- previous frame's detected road
+        hsc1_bin {np.ndarray} -- hsc1 flow binarized
+    Returns:
+        list{int}, list{int} -- row, column coordinates of road trapezoid
+    """
+    road_mask = erosion(previous_road > 0, selem=np.ones((11, 11)))
+    road_perim = np.bitwise_xor(road_mask, erosion(road_mask, np.ones((3, 3))))
+    road_perim = np.bitwise_and(road_perim,  hsc1_bin)
+    rr, cc = np.where(road_perim > 0)
+    return rr, cc
+
+
+def adaptive_perimeter_update_trapz(previous_road, hsc1_bin):
     """Function to adaptively generate coordinates for road trapezoid
     
     Arguments:
@@ -44,22 +62,22 @@ def adaptive_perimeter_update(previous_road, hsc1_bin):
         list{int}, list{int} -- row, column coordinates of road trapezoid
     """
     row_road, col_road = np.where(np.bitwise_and(previous_road > 0,  hsc1_bin))
-    base = np.max(col_road) - np.min(col_road)
-    height = np.max(row_road) - np.min(row_road)
+    # base = np.max(col_road) - np.min(col_road)
+    # height = np.max(row_road) - np.min(row_road)
     centroid = (np.mean(row_road), np.mean(col_road))
     sz = np.shape(previous_road)
     rows, cols = sz[0], sz[1]
-    top_row = max(np.min(row_road), int(rows * 0.5)) + int(height / 8)
+    top_row = np.min(row_road)
     # top_row = int((centroid[0] + np.min(row_road)) / 2)
-    dx = int(np.min(row_road) - centroid[0]) / 2
+    dx = int((centroid[0] - top_row) / 2)
     yy = np.where(previous_road[top_row, :] == 1)
     min_yy, max_yy = np.min(yy), np.max(yy)
     top_width = max_yy - min_yy
-    top_left = [top_row, min_yy + int(0.35 * top_width)]
-    top_right = [top_row, max_yy - int(0.35 * top_width)]
-    bottom_left = [rows, np.min(col_road) + 0.05 * base]
-    bottom_right = [rows, np.min(col_road) + 0.95 * base]
-
+    top_left = [top_row + 2 * dx, centroid[1] + 2 * dx]
+    top_right = [top_row + 2 * dx, centroid[1] - 2 * dx]
+    bottom_left = [rows - 1, np.min(col_road)]
+    bottom_right = [rows - 1, np.max(col_road)]
+    
     rr, cc = polygon_perimeter([rows, top_left[0], top_right[0], rows], 
                                [bottom_left[1], top_left[1],
                                 top_right[1], bottom_right[1]],
@@ -85,7 +103,7 @@ def get_road_seeds(mask_shape, hsc1, thresh, road_trapezoid, previous_road=[]):
     rows, cols = mask_shape[0], mask_shape[1]
     road_perim = np.zeros(mask_shape, np.bool)
     if len(previous_road):
-        rr, cc = adaptive_perimeter_update(previous_road, hsc1 < thresh)
+        rr, cc = adaptive_perimeter_update_arbitrary(previous_road, hsc1 < thresh)
     else:
         rr, cc = polygon_perimeter(road_trapezoid[0], road_trapezoid[1],
                                    (rows, cols), clip=True)
@@ -195,13 +213,14 @@ def main(im1, im2, previous_result=[], seed_selection='static',
     # Calculating the HSC1 flow using Horn Schunck algorithm
     [u, v] = horn_schunck.HornSchunck(im1_c1, im2_c1, alpha, niter)
     hsc1 = imresize(np.sqrt(u ** 2 + v ** 2), np.shape(im2)[:2])
-    # hsc1 = mat2gray(hsc1)
+    hsc1 = mat2gray(hsc1)
     # Getting the threshold of the HSC1 flow using Otsu's method
     threshold = threshold_otsu(hsc1)
 
     # We use hsc1 to define the road and non-road seeds
     seeds = get_seeds(hsc1, threshold, ssd[seed_selection])
-    
+    # for i in range(np.shape(im2)[2]):
+    #     im2[:, :, i] = mat2gray(im2[:, :, i])
     # Applying the random walker segmentation on the downsampled image
     result = random_walker(im2,
                            seeds,
@@ -210,11 +229,12 @@ def main(im1, im2, previous_result=[], seed_selection='static',
                            mode=rw_method)
     # Upsampling the result to the original size:
     result = imresize(result, np.shape(im2_c1), method='nearest')  
-
+    # print (np.count_nonzero(seeds==1), np.count_nonzero(seeds==2))
+    # plt.imshow(seeds);plt.figure();plt.imshow(result);plt.show()
     return result == 1
 
 
-def test():
+def test(rw_method='cl'):
     """Function that tests functionality of road detection module, using two 
        images form the DIPLODOC sequence (see paper).
     
@@ -228,15 +248,18 @@ def test():
 
     im0 = plt.imread('../test/diplo000000-L.png')
     im1, gt1 = read_diplodoc('../test/', 'diplo', 1)
-    result1 = main(im0, im1)
+    result1 = main(im0, im1, rw_method=rw_method)
     results, mask = calculate_metrics(result1, gt1)
     announce_results(results)
-    return results, mask, im1
+    # plt.imsave('../test/im_p.png', im1)
+    # plt.imsave('../test/det_p.png', result1)
+    # plt.imsave('../test/gt_p.png', gt1)
+    return results, result1, mask, im1
 
 
 def test_on_diplodoc(seed_selection='static',
                      alpha=3, niter=1,
-                     beta=90, rw_method='bf',
+                     beta=90., rw_method='cl',
                      downsample_sz=(120, 160)):
     """Function to test road detection on DIPLODOC sequence
     
