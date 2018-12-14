@@ -40,27 +40,37 @@ function normVals=normalize(newVals,oldVals)
 %Initialize
 [N P]=size(newVals);
 
-%Supply optional argument, if required
-if nargin == 1
-    oldVals=[zeros(1,P);ones(1,P)];
+for i = 1:P
+    newVals(:,i) = mat2gray(newVals(:,i));  
 end
-
-%Find original minima/maxima
-minVal=min(oldVals,[],1);
-maxVal=max(oldVals,[],1);
-
-%Find current minima/maxima
-minNewVal=min(newVals,[],1);
-maxNewVal=max(newVals,[],1);
-
-%Perform normalization
-warning off MATLAB:divideByZero %Error for divide by zero handled below
-normVals=newVals-ones(N,1)*minNewVal;
-normVals=normVals.*(ones(N,1)*(maxVal-minVal))./ ...
-    (ones(N,1)*max(normVals,[],1));
-normVals=normVals+ones(N,1)*minVal;
-warning on MATLAB:divideByZero
-
-%Error check for completely uniform inputs
-uniformIndex=find(minNewVal==maxNewVal);
-normVals(:,uniformIndex)=ones(N,1)*minNewVal(:,uniformIndex);
+normVals = newVals;
+%
+%%Supply optional argument, if required
+%if nargin == 1
+%    oldVals=[zeros(1,P);ones(1,P)];
+%end
+%
+%%Find original minima/maxima
+%minVal=min(oldVals,[],1);
+%maxVal=max(oldVals,[],1);
+%
+%%Find current minima/maxima
+%minNewVal=min(newVals,[],1);
+%maxNewVal=max(newVals,[],1);
+%
+%%Perform normalization
+%warning off MATLAB:divideByZero %Error for divide by zero handled below
+%normVals=newVals-ones(N,1)*minNewVal;
+%normVals=normVals.*(ones(N,1)*(maxVal-minVal))./ ...
+%    (ones(N,1)*max(normVals,[],1));
+%mean(normVals)
+%N
+%minVal
+%maxVal
+%normVals=normVals+ones(N,1)*minVal;
+%mean(normVals)
+%warning on MATLAB:divideByZero
+%
+%%Error check for completely uniform inputs
+%uniformIndex=find(minNewVal==maxNewVal);
+%normVals(:,uniformIndex)=ones(N,1)*minNewVal(:,uniformIndex);
