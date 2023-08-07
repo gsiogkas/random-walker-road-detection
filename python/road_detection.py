@@ -1,6 +1,6 @@
 # MIT License
 
-# Copcol_roadight (c) 2018 George Siogkas
+# Copyright (c) 2018 George Siogkas
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
