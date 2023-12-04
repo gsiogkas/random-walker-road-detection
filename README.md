@@ -12,7 +12,7 @@ https://www.linkedin.com/pulse/dr-reproducible-research-how-i-learned-stop-worry
 
 # Python implementation
 ## Dependencies
-- *Python 3+* (tested on Python 3.6).
+- *Python 3+* (tested on Python 3.11.5 in Windows and in Linux via WSL2).
 - *Miniconda / Anaconda*
 - The first thing we need, is a module that allows for image I/O and as many basic manipulations as possible. We could go for OpenCV, but it would be an overkill and we could be even more Pythonic in this exercise. Also, we would like to be closer to Matlab style, to be able to compare the methods easier. For this reason, I chose *scikit-image*.
 - For general array manipulations, indexing and code vectorization to be possible, of course *numpy*.
@@ -34,11 +34,10 @@ Concluding, you can easily recreate my Linux python environment by installing mi
 #### Option 1: create the environment manually:
 
 ```
-conda create -n rdpaper python=3.6 numpy scikit-image scikit-learn matplotlib scipy jupyter tqdm pyamg numexpr
+conda create -n rdpaper python numpy scikit-image scikit-learn matplotlib scipy jupyter tqdm pyamg numexpr
+conda install -c conda-forge cython suitesparse scikit-sparse
 source activate rdpaper
-pip install pyoptflow
-pip install scikit-umfpack
-pip install drawnow
+pip install pyoptflow drawnow gdown
 
 ```
 
@@ -47,8 +46,22 @@ pip install drawnow
 conda env create -f linux_environment.yml
 ```
 ### Windows
-In theory, the same steps should be followed to setup your conda environment in Windows. I will update this section with possible differences once I find to test. If someone can contribute to this, please do.
+For Windows, it took some tweaking, but these are the equivalent steps:
 
+#### Option 1: create the environment manually:
+
+```
+conda create -n rdpaper python numpy scikit-image scikit-learn matplotlib scipy jupyter tqdm pyamg numexpr
+conda install -c conda-forge cython suitesparse scikit-sparse
+source activate rdpaper
+pip install pyoptflow drawnow gdown
+
+```
+
+#### Option 2: Create the environment using my image:
+```bash
+conda env create -f windows_environment.yml
+```
 
 ## Basic usage
 You can run a smoke test on the 2 images included here by running test() from inside the python folder:
@@ -62,7 +75,7 @@ You can run the algorithm on all the frames of the DIPLODOC sequence by running:
 
 ```python
 import road_detection
-results = road_detection.test_on_diplodoc_sequence()
+results = road_detection.test_on_diplodoc()
 ```
 
 This will give you a list of dictionaries with the performance metrics per frame.

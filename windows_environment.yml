@@ -114,5 +114,3 @@ dependencies:
     - drawnow==0.72.0
     - graphviz==0.8
     - pyoptflow==1.3.0
-prefix: c:\Python\miniconda3\envs\rdpaper
-
