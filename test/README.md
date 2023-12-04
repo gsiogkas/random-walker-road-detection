@@ -1,4 +1,4 @@
-Files for testing basic implementation, taken from DIPLODOC sequences [https://tev.fbk.eu/databases/diplodoc-road-stereo-sequence].
+Files for testing basic implementation, taken from DIPLODOC sequences [https://drive.google.com/file/d/1_AiVI-sADvZiz_Uc0-MizmUih-bAXgo1/view?usp=sharing].
 
 These are the 2 first frames and road ground truth in .txt and .png format for the second one:
 
