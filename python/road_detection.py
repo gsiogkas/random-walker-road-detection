@@ -101,7 +101,7 @@ def get_road_seeds(mask_shape, hsc1, thresh, road_trapezoid, previous_road=[]):
     """
 
     rows, cols = mask_shape[0], mask_shape[1]
-    road_perim = np.zeros(mask_shape, np.bool)
+    road_perim = np.full(mask_shape, False)
     if len(previous_road):
         rr, cc = adaptive_perimeter_update_arbitrary(previous_road, hsc1 < thresh)
     else:
@@ -147,7 +147,7 @@ def get_seeds(hsc1, thresh, previous_road):
     sky[ :-int(np.ceil(rows * .8)), :] = True
     non_road_seeds = np.bitwise_or(sky, hsc1 >= thresh)
 
-    seeds = np.zeros(hsc1.shape[:2], np.int)
+    seeds = np.zeros(hsc1.shape[:2], int)
     seeds[road_seeds] = 1
     seeds[non_road_seeds] = 2 
 

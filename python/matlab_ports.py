@@ -19,7 +19,7 @@ def poly2mask(vertex_row_coords, vertex_col_coords, shape):
     fill_row_coords, fill_col_coords = draw.polygon(vertex_row_coords,
                                                     vertex_col_coords,
                                                     shape)
-    mask = np.zeros(shape, dtype=np.bool)
+    mask = np.full(shape, False)
     mask[fill_row_coords, fill_col_coords] = True
     return mask
 
@@ -36,7 +36,7 @@ def mat2gray(A):
         numpy.ndarray -- The normalized array (range of values in [0, 1])
     """
 
-    A = A.astype(np.float)
+    A = A.astype(float)
     Amin = np.min(A)
     Amax = np.max(A)
     normalized = (A - Amin) / (Amax - Amin)
@@ -80,5 +80,4 @@ def imresize(im, factor,
     return resize(im, factor,
                   order=methods_dict[method],
                   mode=mode,
-                  preserve_range=preserve_range,
-                  anti_aliasing=anti_aliasing)
+                  preserve_range=preserve_range)
