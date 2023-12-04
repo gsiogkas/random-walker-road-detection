@@ -1,4 +1,6 @@
+import zipfile
 import tarfile
+import gdown
 import urllib.request
 from pathlib import Path
 from tqdm import tqdm
@@ -130,16 +132,13 @@ def download_decompress_diplodoc():
     final_data_path = Path(Path.cwd()).parents[0] / 'data'
     base_data_path = final_data_path.as_posix()
     if not (final_data_path / 'gtseq').is_dir():
-        diplodoc_url = 'https://tev-static.fbk.eu/DATABASES/gtseq002836.tgz'
+        diplodoc_url = 'https://drive.google.com/uc?id=1_AiVI-sADvZiz_Uc0-MizmUih-bAXgo1'
         print('Getting DIPLODOC dataset -- progress:')
-        with tqdm(unit='B', unit_scale=True, unit_divisor=1024, miniters=1,
-                  desc='Downloading') as t:
-            urllib.request.urlretrieve(diplodoc_url,
-                                       reporthook=my_hook(t),
-                                       filename=(base_data_path + '/gtseq.tgz'),
-                                       data=None)
+        gdown.download(diplodoc_url, base_data_path + '/gtseq.zip', quiet=False)
         # local_filename, headers = urllib.request.urlretrieve(diplodoc_url)
-        with tarfile.open(base_data_path + '/gtseq.tgz') as tar_file:
+        with zipfile.ZipFile(base_data_path + '/gtseq.zip', 'r') as zip_ref:
+            zip_ref.extractall(base_data_path)
+        with tarfile.open(base_data_path + '/gtseq002836.tgz') as tar_file:
             for tar_member in tqdm(iterable=tar_file.getmembers(),
                                    total=len(tar_file.getmembers()),
                                    desc='Decompressing'):
