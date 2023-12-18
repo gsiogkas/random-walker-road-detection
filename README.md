@@ -7,6 +7,7 @@ doi: 10.1109/TITS.2012.2223686
 URL: http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6338335&isnumber=6521414
 
 A commentary on the making of and rationale behind this repo can be found in a series of my LinkedIn articles (missing the last part for some years now, but it's still complete enough as it is):
+
 https://www.linkedin.com/pulse/dr-reproducible-research-how-i-learned-stop-worrying-love-siogkas/
 
 https://www.linkedin.com/pulse/dr-reproducible-research-how-i-learned-stop-worrying-love-siogkas-1f/?trackingId=VSuHoyReQmqYdotYvxvFGQ%3D%3D
